@@ -9,13 +9,17 @@ import rada from "./imageses/fx-shogun.jpg";
 import me from "./imageses/p10874252_b_h10_aa.jpg";
 import you from "./imageses/x-former-twitter-social-media-app-icon-black-silhouete-square-rounded-corners-shape-vector-illustration-294027990.webp";
 import po from "./imageses/download (6).jpeg";
+import ChatBot from "./ChatBot"; // Ensure the ChatBot component is correctly imported
 
 const GetMovies = () => {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true); // Add loading state
+  const [error, setError] = useState(null); // Error state to handle issues fetching data
   const img_url = "https://Anjin.pythonanywhere.com/static/images/";
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Fetch products
   const getProduct = async () => {
     try {
       const response = await axios.get(
@@ -23,8 +27,11 @@ const GetMovies = () => {
       );
       setProducts(response.data.products);
       localStorage.setItem("products", JSON.stringify(response.data.products));
+      setLoading(false); // Stop loading after data is fetched
     } catch (error) {
       console.error("Error fetching products:", error);
+      setLoading(false); // Stop loading on error
+      setError("Failed to load products. Please try again later.");
     }
   };
 
@@ -32,10 +39,22 @@ const GetMovies = () => {
     getProduct();
   }, []);
 
-  // 🔍 Filter products based on search term
+  // 🔍 Filter products based on the search term
   const filteredProducts = products.filter((product) =>
     product.product_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Function to chunk the array
+  const chunkArray = (arr, chunkSize) => {
+    const result = [];
+    for (let i = 0; i < arr.length; i += chunkSize) {
+      result.push(arr.slice(i, i + chunkSize));
+    }
+    return result;
+  };
+
+  // Chunk the filtered products into smaller arrays (e.g., 4 products per chunk)
+  const chunkedProducts = chunkArray(filteredProducts, 4);
 
   return (
     <div className="container-fluid">
@@ -50,7 +69,6 @@ const GetMovies = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-
       {/* 🔹 Movie Carousel */}
       <Carousel
         autoPlay
@@ -61,64 +79,90 @@ const GetMovies = () => {
         className="carousel-container"
       >
         <div>
-          <img src={beak} alt="Movie 1" className="carousel-image" />
+          <img src={beak} alt="Game of Thrones" className="carousel-image" />
           <p className="legend">Enjoy Unlimited Streaming</p>
         </div>
         <div>
-          <img src={rada} alt="Movie 2" className="carousel-image" />
+          <img src={rada} alt="Shogun Movie" className="carousel-image" />
           <p className="legend">Secure Payment & Fast Access</p>
         </div>
         <div>
-          <img src={push} alt="Movie 3" className="carousel-image" />
+          <img src={push} alt="Money Heist" className="carousel-image" />
           <p className="legend">Exclusive Movies & Special Offers</p>
         </div>
         <div>
-          <img src={me} alt="Movie 4" className="carousel-image" />
+          <img src={me} alt="Latest Blockbusters" className="carousel-image" />
           <p className="legend">Latest Blockbusters & Hidden Gems</p>
         </div>
       </Carousel>
-
       {/* 🔹 Product List */}
-      <div className="row d-flex justify-content-center">
-        {filteredProducts?.map((product, index) => (
-          <div className="col-md-3 d-flex align-items-stretch mb-4" key={index}>
-            <div
-              className="card shadow p-2 w-100"
-              style={{ minHeight: "450px" }}
-            >
-              <div
-                className="d-flex justify-content-center align-items-center"
-                style={{ height: "250px" }}
-              >
-                <img
-                  src={img_url + product.product_photo}
-                  alt={product.product_name}
-                  className="card-img-top"
-                  style={{
-                    maxHeight: "100%",
-                    maxWidth: "100%",
-                    objectFit: "contain",
-                  }}
-                />
+      {loading && <p className="text-center text-light">Loading products...</p>}
+      {error && <p className="text-center text-danger">{error}</p>}{" "}
+      {/* Display error message */}
+      {!loading && !error && filteredProducts.length === 0 && (
+        <p className="text-center text-warning">No products found</p>
+      )}
+      {/* Display chunked products */}
+      {!loading && !error && chunkedProducts.length > 0 && (
+        <div>
+          <h3 className="text-center text-warning my-4">Featured Products</h3>
+          <div className="row d-flex justify-content-center">
+            {chunkedProducts.map((chunk, chunkIndex) => (
+              <div key={chunkIndex} className="row w-100 mb-4">
+                {chunk.map((product, index) => (
+                  <div
+                    className="col-md-3 d-flex align-items-stretch mb-4"
+                    key={index}
+                  >
+                    <div
+                      className="card shadow p-2 w-100"
+                      style={{ minHeight: "500px" }}
+                    >
+                      <div
+                        className="d-flex justify-content-center align-items-center"
+                        style={{ height: "320px" }}
+                      >
+                        {/* Display image or fallback */}
+                        <img
+                          src={
+                            product.product_photo
+                              ? img_url + product.product_photo
+                              : "/fallback-image.jpg"
+                          }
+                          alt={product.product_name}
+                          className="card-img-top"
+                          style={{
+                            maxHeight: "100%",
+                            maxWidth: "100%",
+                            objectFit: "contain",
+                          }}
+                        />
+                      </div>
+                      <div className="card-body d-flex flex-column">
+                        <h5 className="mt-2">{product.product_name}</h5>
+                        <p className="text-muted flex-grow-1">
+                          {product.product_description}
+                        </p>
+                        <b className="text-warning">${product.product_cost}</b>
+                        <button
+                          className="btn btn-danger mt-2"
+                          onClick={() =>
+                            navigate("/payment", { state: { product } })
+                          }
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="card-body d-flex flex-column">
-                <h5 className="mt-2">{product.product_name}</h5>
-                <p className="text-muted flex-grow-1">
-                  {product.product_description}
-                </p>
-                <b className="text-warning">${product.product_cost}</b>
-                <button
-                  className="btn btn-danger mt-2"
-                  onClick={() => navigate("/payment", { state: { product } })}
-                >
-                  Download
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
-
+        </div>
+      )}
+      {/* ChatBot Integration */}
+      <ChatBot />
       {/* 🔹 Footer Section */}
       <footer className="container-fluid bg-dark text-light py-4 mt-5">
         <div className="row text-center">
@@ -139,7 +183,6 @@ const GetMovies = () => {
           <div className="col-md-6 text-end">
             <h4 className="text-warning">Stay Connected</h4>
             <div>
-              {/* Instagram (Read-Only Link) */}
               <a
                 href="https://instagram.com/anjin_2.0"
                 target="_blank"
@@ -147,14 +190,12 @@ const GetMovies = () => {
               >
                 <img src={po} alt="Instagram" className="social-icon mx-2" />
               </a>
-
-              {/* X (Twitter) (Read-Only Link) */}
               <a
                 href="https://twitter.com/@Anjin129"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <img src={you} alt="Twitter/X" className="social-icon mx-2" />
+                <img src={you} alt="Twitter" className="social-icon mx-2" />
               </a>
             </div>
             <p className="mt-2">
@@ -163,7 +204,6 @@ const GetMovies = () => {
           </div>
         </div>
       </footer>
-
       {/* 🔹 Footer Styles */}
       <style>
         {`
@@ -182,11 +222,12 @@ const GetMovies = () => {
           }
         `}
       </style>
-      <footer className="text-warning">
-        <p>&copy;Anjin movies All rights Reserved</p>
+      <footer className="text-warning text-center mt-3">
+        <p>&copy; Anjin Movies. All rights reserved.</p>
       </footer>
     </div>
   );
 };
 
+// https://www.canva.com/design/DAGmxAx_B7w/BoKmVK1nC9o1j3I_IiMd3w/edit
 export default GetMovies;

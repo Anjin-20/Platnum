@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import PasswordStrengthBar from "react-password-strength-bar"; // Password strength visualizer
 
 const Signup = () => {
   const [username, setUsername] = useState("");
@@ -20,53 +21,53 @@ const Signup = () => {
       setError("❌ All fields are required.");
       return false;
     }
+
     // Basic email validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
       setError("❌ Please enter a valid email.");
       return false;
     }
-    // Basic phone number validation
-    if (phone.length < 10) {
-      setError("❌ Phone number should be at least 10 digits.");
+
+    // Basic phone number validation (10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+      setError("❌ Phone number should be exactly 10 digits.");
       return false;
     }
+
+    // Password validation (length check)
+    if (password.length < 8) {
+      setError("❌ Password should be at least 8 characters.");
+      return false;
+    }
+
     return true;
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(""); // Clear previous error
-    if (!validateForm()) return; // Only proceed if form is valid
+   const handleSubmit = async (e) => {
+     e.preventDefault();
+     setLoading("Connecting...");
+     try {
+       const formData = new FormData();
+       formData.append("username", username);
+       formData.append("email", email);
+       formData.append("phone", phone);
+       formData.append("password", password);
+       console.log(formData);
 
-    setLoading(true);
-    try {
-      const response = await axios.post(
-        "https://Anjin.pythonanywhere.com/api/signup",
-        {
-          username,
-          email,
-          phone,
-          password,
-        }
-      );
-
-      // Success message
-      setLoading(false);
-      setSuccess("✅ Signup successful! Redirecting to login...");
-
-      // Redirect to login page after successful signup
-      setTimeout(() => {
-        navigate("/signin");
-      }, 2000);
-    } catch (error) {
-      setLoading(false);
-      setError("⚠️ An error occurred while signing up. Please try again.");
-      console.error("Signup error:", error);
-    }
-  };
-
+       //posting the data
+       const response = await axios.post(
+         "https://Anjin.pythonanywhere.com/api/signup",
+         formData
+       );
+       setLoading("");
+       setSuccess(response.data.success);
+     } catch (error) {
+       setError(error.message);
+     }
+   };
   return (
     <div className="container d-flex justify-content-center align-items-center min-vh-100">
       <div className="row w-100 justify-content-center">
@@ -77,7 +78,7 @@ const Signup = () => {
           <h1 className="text-center text-warning">Sign Up</h1>
 
           {/* Feedback Messages */}
-          {loading && <p className="text-info text-center">⌛ Loading...</p>}
+          {loading && <p className="text-info text-center">⌛ Signing up...</p>}
           {success && <p className="text-success text-center">{success}</p>}
           {error && <p className="text-danger text-center">{error}</p>}
 
@@ -107,7 +108,7 @@ const Signup = () => {
             {/* Phone Input */}
             <input
               type="tel"
-              placeholder="Phone"
+              placeholder="Phone (10 digits)"
               className="form-control mb-3"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -124,6 +125,14 @@ const Signup = () => {
               onChange={(e) => setPassword(e.target.value)}
               style={inputStyle}
               disabled={loading}
+            />
+
+            {/* Password Strength Bar */}
+            <PasswordStrengthBar
+              password={password}
+              minLength={8}
+              shortScoreWord="Too short"
+              scoreWords={["Weak", "Fair", "Good", "Strong", "Very Strong"]}
             />
 
             <button

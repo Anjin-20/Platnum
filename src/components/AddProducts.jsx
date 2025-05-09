@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 const AddProducts = () => {
   const [product_name, setProductName] = useState("");
@@ -8,17 +8,21 @@ const AddProducts = () => {
   const [product_photo, setProductPhoto] = useState(null);
 
   // Feedback system
-  const [loading, setLoading] = useState("");
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  // Handle form submission
+  const fileInputRef = useRef(null); // Ref for file input
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setError("");
+    setSuccess("");
+
     if (
-      !product_name ||
-      !product_description ||
+      !product_name.trim() ||
+      !product_description.trim() ||
       !product_cost ||
       !product_photo
     ) {
@@ -26,7 +30,17 @@ const AddProducts = () => {
       return;
     }
 
-    setLoading("Uploading...");
+    if (!["image/jpeg", "image/png"].includes(product_photo.type)) {
+      setError("Only JPG and PNG image files are allowed.");
+      return;
+    }
+
+    if (Number(product_cost) <= 0) {
+      setError("Product cost must be greater than zero.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const formData = new FormData();
@@ -36,40 +50,50 @@ const AddProducts = () => {
       formData.append("product_photo", product_photo);
 
       const response = await axios.post(
-        "https://Anjin.pythonanywhere.com/api/add_product",
+        "https://anjin.pythonanywhere.com/api/add_product",
         formData
       );
 
-      if (response.data.success) {
-        setLoading("");
-        setSuccess(response.data.success);
+      if (response.data.message) {
+        setSuccess(response.data.message);
         setProductName("");
         setProductDescription("");
         setProductCost("");
         setProductPhoto(null);
+        fileInputRef.current.value = null; // Clear file input
+        setError("");
       } else {
-        setLoading("");
         setError("Failed to add product. Please try again.");
       }
-    } catch (error) {
-      setLoading("");
-      setError(error.message);
+    } catch (err) {
+      setError(
+        err.response?.data?.error ||
+          "An unexpected error occurred. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="row justify-content-center mt-2">
-     <div className="col-lg-6 col-md-8 col-sm-10 col-12 card shadow-lg p-4 text-light" style={cardStyle}>
-
+    <div className="row justify-content-center mt-5">
+      <div
+        className="col-lg-6 col-md-8 col-sm-10 col-12 card shadow-lg p-4 text-light"
+        style={cardStyle}
+      >
         <h1 className="text-center text-warning">Add Product</h1>
 
-        {/* Feedback messages */}
-        {loading && <p className="text-info">{loading}</p>}
+        {loading && (
+          <p className="text-info">
+          
+            Uploading...
+          </p>
+        )}
         {success && <p className="text-success">{success}</p>}
         {error && <p className="text-danger">{error}</p>}
 
-        {/* Form */}
         <form onSubmit={handleSubmit}>
+          <label className="form-label">Product Name</label>
           <input
             type="text"
             placeholder="Product name"
@@ -79,6 +103,7 @@ const AddProducts = () => {
             style={inputStyle}
           />
 
+          <label className="form-label">Product Description</label>
           <textarea
             placeholder="Product description"
             className="form-control mb-3"
@@ -87,6 +112,7 @@ const AddProducts = () => {
             style={inputStyle}
           ></textarea>
 
+          <label className="form-label">Product Cost</label>
           <input
             type="number"
             placeholder="Product cost"
@@ -96,9 +122,11 @@ const AddProducts = () => {
             style={inputStyle}
           />
 
+          <label className="form-label">Product Photo (JPG/PNG)</label>
           <input
+            ref={fileInputRef}
             type="file"
-            placeholder="Choose image"
+            accept="image/png, image/jpeg"
             className="form-control mb-3"
             onChange={(e) => setProductPhoto(e.target.files[0])}
             style={inputStyle}
@@ -108,20 +136,23 @@ const AddProducts = () => {
             type="submit"
             className="btn btn-warning w-100"
             style={buttonStyle}
+            disabled={loading}
           >
             {loading ? "Adding Product..." : "Add Product"}
           </button>
         </form>
-        <footer className="text-warning">
-          <p>&copy;Anjin movies All rights Reserved</p>
+
+        <footer className="text-warning mt-4">
+          <p>&copy; Anjin Movies. All rights reserved.</p>
         </footer>
       </div>
     </div>
   );
 };
 
-// Cinematic card styling
+// Styles
 const cardStyle = {
+  marginTop: "60px",
   background: "linear-gradient(to right, #1c1c1c, #2a2a2a)",
   borderRadius: "15px",
   boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.8)",
@@ -130,19 +161,16 @@ const cardStyle = {
   textAlign: "center",
 };
 
-// Cinematic input styling
 const inputStyle = {
   backgroundColor: "#333",
   color: "#fff",
   border: "1px solid #444",
   borderRadius: "5px",
   padding: "12px",
-  marginBottom: "10px",
   fontSize: "1rem",
   transition: "all 0.3s ease",
 };
 
-// Cinematic button styling
 const buttonStyle = {
   backgroundColor: "#f1c40f",
   color: "#2c3e50",

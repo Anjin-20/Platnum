@@ -248,3 +248,54 @@ button:hover {
 .text-danger {
   color: #ff5722; /* Accent color - Orange-red */
 }
+.chatbot-container {
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+.chatbot-header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.chatbot-messages {
+  margin-bottom: 10px;
+}
+
+.user-message {
+  background-color: #d3f1ff;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 5px;
+}
+
+.bot-message {
+  background-color: #e8e8e8;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 5px;
+}
+
+.chatbot-input {
+  display: flex;
+  justify-content: space-between;
+}
+
+.chatbot-input input {
+  width: 80%;
+  padding: 8px;
+  border-radius: 5px;
+}
+
+.chatbot-input button {
+  width: 15%;
+  padding: 8px;
+  border-radius: 5px;
+  background-color: #5c6bc0;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
